@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, APIRouter
 from pydantic import BaseModel
 
+# Create a constant for the tasks
 TASKS = [
     {'id': '1','title': 'Task One', 'description': 'Description One', 'priority': 'high'},
     {'id': '2','title': 'Task Two', 'description': 'Description Two', 'priority': 'medium'},
@@ -10,49 +11,68 @@ TASKS = [
     {'id': '6','title': 'Task Six', 'description': 'Description Two', 'priority': 'low'}
 ]
 
+# Create a FastAPI instance and set the router prefix
+app = FastAPI()
+# router = APIRouter(prefix="/api/v1/tasks")
+# app.include_router(router)
+
 class Task(BaseModel):
     id: str
     title: str
     description: str
     priority: str
 
-app = FastAPI()
-
-@app.get("/api/v1/tasks")
+# Create api endpoint
+@app.get("/Tasks")
 async def get_all_tasks() -> dict:
+    if not TASKS:
+        raise HTTPException(status_code=404, detail="No tasks found")
     return TASKS
 
-@app.get("/api/v1/tasks/{task_id}")
+@app.get("/Tasks/{task_id}")
 async def get_task_by_id(task_id: str) -> dict:
-    for task in TASKS:
-        if task['id'] == task_id:            
-            return {"Tasks": task}
-    else:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-@app.post("/api/v1/tasks")
-async def create_task(task: Task) -> dict:
-    if(task.id in TASKS):
-        raise HTTPException(status_code=400, detail="Task already exists")
-    TASKS.append(task)
-    return TASKS
-
-@app.put("/api/v1/tasks/{task_id}")
-async def update_task(task_id: str, updated_task: Task) -> dict:
-    for task in TASKS:
-        if task['id'] == task_id:            
-            task['title'] = updated_task.title
-            task['description'] = updated_task.description
-            task['priority'] = updated_task.priority
-            return task
-    raise HTTPException(status_code=404, detail="Task not found")
+    if not TASKS:
+        raise HTTPException(status_code=404, detail="No tasks found")
     
-@app.delete("/api/v1/tasks/{task_id}")
-async def delete_task(task_id: str) -> dict:
     for task in TASKS:
         if task['id'] == task_id:
+            return task
+    
+    raise HTTPException(status_code=404, detail="Task not found")
+
+# #  Query params:
+# @app.get("/Tasks/")
+# async def get_tasks_by_priority(task_id: str, priority: str) -> dict:
+#     tasks_by_priority = []
+#     for task in TASKS:
+#         if task_id == task['id'] and task['priority'].lower() == priority.lower():
+#             tasks_by_priority.append(task)
+#     return tasks_by_priority
+
+@app.post("/Tasks/")
+async def create_task(task: Task) -> dict:
+    if not task:
+        raise HTTPException(status_code=400, detail="Task not found")
+    TASKS.append(task.model_dump())
+    return task
+
+@app.put("/Tasks/{task_id}")
+async def update_task(task_id: str, task: Task) -> dict:
+    if not task:
+        raise HTTPException(status_code=400, detail="Task not found")
+    for task in TASKS:
+        if task['id'] == task_id:
+            task['title'] = task.title
+            task['description'] = task.description
+            task['priority'] = task.priority
+            return task    
+
+@app.delete("/Tasks/{task_id}")
+async def delete_task(task_id: str) -> dict:
+    for task in TASKS:
+        if task_id == task['id']:
             TASKS.remove(task)
-            return TASKS
-    else:
-        raise HTTPException(status_code=404, detail="Task not found")
+            return task
+    raise HTTPException(status_code=404, detail="Task not found")
+
 
