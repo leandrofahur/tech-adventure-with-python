@@ -18,42 +18,41 @@ class Task(BaseModel):
 
 app = FastAPI()
 
-@app.get("/")
+@app.get("/api/v1/tasks")
 async def get_all_tasks() -> dict:
-    return {"Tasks": TASKS}
+    return TASKS
 
-@app.get("/{task_id}")
+@app.get("/api/v1/tasks/{task_id}")
 async def get_task_by_id(task_id: str) -> dict:
     for task in TASKS:
-        if task['id'] == task_id:
-            print(task)
+        if task['id'] == task_id:            
             return {"Tasks": task}
     else:
         raise HTTPException(status_code=404, detail="Task not found")
 
-@app.post("/")
+@app.post("/api/v1/tasks")
 async def create_task(task: Task) -> dict:
     if(task.id in TASKS):
         raise HTTPException(status_code=400, detail="Task already exists")
     TASKS.append(task)
-    return {"Tasks": TASKS}
+    return TASKS
 
-@app.put("/{task_id}")
+@app.put("/api/v1/tasks/{task_id}")
 async def update_task(task_id: str, updated_task: Task) -> dict:
     for task in TASKS:
         if task['id'] == task_id:            
             task['title'] = updated_task.title
             task['description'] = updated_task.description
             task['priority'] = updated_task.priority
-            return {"Task": task}
+            return task
     raise HTTPException(status_code=404, detail="Task not found")
     
-@app.delete("/{task_id}")
+@app.delete("/api/v1/tasks/{task_id}")
 async def delete_task(task_id: str) -> dict:
     for task in TASKS:
         if task['id'] == task_id:
             TASKS.remove(task)
-            return {"Tasks": TASKS}
+            return TASKS
     else:
         raise HTTPException(status_code=404, detail="Task not found")
 
